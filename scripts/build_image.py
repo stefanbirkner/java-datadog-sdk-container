@@ -34,7 +34,7 @@ def create_dockerfile(url: str) -> str:
 def main() -> int:
     version, download_url = fetch_agent_release_info()
     dockerfile = create_dockerfile(download_url)
-    tag_name = f"eclipse-temurin-datadog:26-jdk-alpine-{version}"
+    tag_name = f"ghcr.io/stefanbirkner/eclipse-temurin-datadog:26-jdk-alpine-{version}"
     subprocess.run(
         [
             "podman",
@@ -46,15 +46,16 @@ def main() -> int:
         check=True,
         stdout=subprocess.DEVNULL,
     )
-    subprocess.run(
-        [
-            "podman",
-            "push",
-            tag_name,
-        ],
-        check=True,
-        stdout=subprocess.DEVNULL,
-    )
+    if os.environ.get("PUSH_IMAGE", "false") == "true":
+        subprocess.run(
+            [
+                "podman",
+                "push",
+                tag_name,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
     os.remove(dockerfile)
     print(tag_name)
     return 0
