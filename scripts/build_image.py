@@ -46,6 +46,15 @@ def main() -> int:
         check=True,
         stdout=subprocess.DEVNULL,
     )
+    subprocess.run(
+        [
+            "podman",
+            "push",
+            tag_name,
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
     os.remove(dockerfile)
     print(tag_name)
     return 0
