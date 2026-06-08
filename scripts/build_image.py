@@ -3,10 +3,13 @@
 # requires-python = ">=3.14.5"
 # dependencies = [
 #     "olot",
+#     "oras",
 # ]
 # ///
 
 import json
+from olot.basics import oci_layers_on_top
+from olot.backend.oras_py import oras_py_pull, oras_py_push
 import os
 import subprocess
 from typing import Tuple
@@ -67,6 +70,7 @@ def main() -> int:
     version, download_url = fetch_agent_release_info()
     dockerfile = create_dockerfile(download_url)
     tag_name = f"ghcr.io/stefanbirkner/eclipse-temurin-datadog:26-jdk-alpine-{version}-datadog"
+    oras_py_pull("eclipse-temurin-datadog:26-jdk-alpine", "target")
     build_image(tag_name)
     os.remove(dockerfile)
     push_image(tag_name)
