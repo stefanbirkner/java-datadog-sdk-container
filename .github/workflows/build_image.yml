@@ -11,9 +11,13 @@ jobs:
 
         steps:
             - uses: actions/checkout@v5
-            - uses: actions/setup-python@v6
+            - name: Install uv
+              uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
               with:
-                python-version: '3.13'
+                version: '0.11.19'
+            - name: Set up Python
+              run: uv python install
             - name: Log in to GitHub Container Registry
               run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
-            - run: python scripts/build_image.py
+            - name: Build and push OCI container image
+              run: uv run scripts/build_image.py
