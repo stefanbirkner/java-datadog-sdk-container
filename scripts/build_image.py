@@ -70,7 +70,7 @@ def main() -> int:
     version, download_url = fetch_agent_release_info()
     dockerfile = create_dockerfile(download_url)
     tag_name = f"ghcr.io/stefanbirkner/eclipse-temurin-datadog:26-jdk-alpine-{version}-datadog"
-    oras_py_pull("eclipse-temurin-datadog:26-jdk-alpine", "target")
+    oras_py_pull("docker.io/eclipse-temurin:26-jdk-alpine", "target")
     build_image(tag_name)
     os.remove(dockerfile)
     push_image(tag_name)
