@@ -2,15 +2,16 @@
 
 Running containerized Java applications with [Datadog's Application Performance Monitoring (APM)](https://docs.datadoghq.com/tracing/) requires the [Datadog SDK](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/java) to collect traces. The SDK has to be downloaded from Datadog — but instead of downloading it on every build, you can use a base image that bundles Java and the Datadog SDK together.
 
-This repository maintains such an image and updates it automatically whenever a new SDK version is published. To get started, clone or fork this repository to your GitHub account.
+This repository maintains such an image and updates it automatically whenever a new SDK version is published. To get started, clone or fork this repository to your GitHub or GitLab account.
 
 The original source of this repository is:
 - https://github.com/stefanbirkner/java-datadog-sdk-container
+- https://gitlab.com/stefanbirkner/java-datadog-sdk-container
 
 
 ## How it works
 
-It queries the [dd-trace-java GitHub releases API](https://api.github.com/repos/DataDog/dd-trace-java/releases/latest) to determine the latest Datadog SDK version. It then checks whether an image for that version already exists in the registry. If not, it builds a new image — starting from your chosen Java base image and adding the SDK at `/opt/dd-java-agent.jar` — and pushes it to the registry.
+It queries the [dd-trace-java GitHub releases API](https://api.github.com/repos/DataDog/dd-trace-java/releases/latest) to determine the latest Datadog SDK version. It then checks whether an image for that version already exists in the registry. If not, it builds a new image — starting from your chosen Java base image and adding the SDK JAR at `/opt/dd-java-agent.jar` — and pushes it to the registry.
 
 
 ## Usage
@@ -46,6 +47,37 @@ You can pipe the output to another command to trigger follow-up actions. For exa
 ```yaml
 - name: Build and push OCI container image
   run: uv run build_image.py --registry_and_namespace ghcr.io/${{ github.repository_owner }} eclipse-temurin:26-jdk-alpine | uv run send_mail.py
+```
+
+
+### GitLab pipeline
+
+1. Clone or fork the repository.
+2. Set your desired Java base image in `.gitlab-ci.yml`.
+3. Create a pipeline schedule (see [GitLab documentation](https://docs.gitlab.com/ci/pipelines/schedules/#create-a-pipeline-schedule))
+
+The pipeline runs according to the pipeline schedule. It builds an initial image on first run, then creates a new image whenever a new Datadog SDK version is available.
+
+Image names follow this pattern:
+
+    registry.gitlab.com/<owner>/<repository>/eclipse-temurin-datadog:26-jdk-alpine-1.63.0-datadog
+
+#### Triggering additional actions
+
+`build_image.py` writes the new image name, tag and digest to stdout, e.g.:
+
+    registry.gitlab.com/stefanbirkner/java-datadog-agent-container/eclipse-temurin-datadog:26-jdk-alpine-1.63.0-datadog@sha256:0bf9aff42dce7d336dc70e410bdb9f1fc62ea200a3c25360ac335d00e9da6d7f
+
+Nothing is written to stdout if the script didn't create a new image because the latest image is already up to date.
+
+You can pipe the output to another command to trigger follow-up actions. For example, to send an email when a new image is built:
+
+```yaml
+- >
+    uv run build_image.py
+    --registry_and_namespace $CI_REGISTRY_IMAGE
+    docker.io/eclipse-temurin:26-jdk-alpine
+    | uv run send_mail.py
 ```
 
 
