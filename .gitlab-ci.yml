@@ -1,0 +1,22 @@
+# The hourly schedule must be configured in GitLab UI under CI/CD > Schedules.
+# Required CI/CD variables: GHCR_USERNAME, GHCR_TOKEN (GitHub PAT with packages:write)
+
+workflow:
+    rules:
+        - if: '$CI_COMMIT_BRANCH == "main"'
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+
+build-container:
+    image: astral/uv:debian 
+    before_script:
+        - apt-get update -qq && apt-get install -y -qq podman
+        - export PATH="$HOME/.local/bin:$PATH"
+    script:
+        - uv python install
+        - > 
+            echo "$CI_REGISTRY_PASSWORD"
+            | podman login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+        - > 
+            uv run build_image.py
+            --registry_and_namespace $CI_REGISTRY_IMAGE
+            docker.io/eclipse-temurin:26-jdk-alpine
