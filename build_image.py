@@ -105,7 +105,7 @@ def extract_image_name_and_tag(base_image: str) -> Tuple[str, str]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("base_image")
+    parser.add_argument("base_image", nargs="+")
     parser.add_argument("-rn", "--registry_and_namespace")
     return parser.parse_args()
 
@@ -113,16 +113,17 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    base_image_repository, base_image_tag = extract_image_name_and_tag(args.base_image)
     version, download_url = fetch_sdk_release_info()
-    image_name_with_tag = f"{args.registry_and_namespace}/{base_image_repository}-datadog:{base_image_tag}-{version}-datadog"
-    if not image_exists(image_name_with_tag):
-        containerfile = write_containerfile(args.base_image, download_url)
-        build_image(image_name_with_tag)
-        os.remove(containerfile)
-        push_image(image_name_with_tag)
-        image_name_with_tag_and_digest = add_digest(image_name_with_tag)
-        print(image_name_with_tag_and_digest)
+    for base_image in args.base_image:
+        base_image_repository, base_image_tag = extract_image_name_and_tag(base_image)
+        image_name_with_tag = f"{args.registry_and_namespace}/{base_image_repository}-datadog:{base_image_tag}-{version}-datadog"
+        if not image_exists(image_name_with_tag):
+            containerfile = write_containerfile(base_image, download_url)
+            build_image(image_name_with_tag)
+            os.remove(containerfile)
+            push_image(image_name_with_tag)
+            image_name_with_tag_and_digest = add_digest(image_name_with_tag)
+            print(image_name_with_tag_and_digest)
 
 
 if __name__ == "__main__":
